@@ -1,0 +1,50 @@
+{% extends "reports/base.html" %}
+{% block title %}Tickets detalhados — GLPI Reports{% endblock %}
+{% block content %}
+  <h3>Chamados por área</h3>
+  {% include "reports/_filter_form.html" %}
+  <p><strong>Total filtrado:</strong> {{ total }}</p>
+  {% if page_obj.object_list %}
+  <p>
+    <a class="contrast" href="{% url 'chamados_por_area_csv' %}{% querystring request.GET %}">
+      Exportar CSV
+    </a>
+  </p>
+  {% endif %}
+  <table role="grid">
+    <thead>
+      <tr>
+        <th>Grupo Requisitante</th>
+        <th>Área do Chamado</th>
+        <th>Quantidade de chamados</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in page_obj.object_list %}
+      <tr>
+        <td>{{ row.grupo_requisitante }}</td>
+        <td>{{ row.categoria_nivel2 }}</td>
+        <td>{{ row.qtde_chamados }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7">Nenhum resultado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav>
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li><a href="?{% querystring request.GET page=1 %}">« Primeiro</a></li>
+        <li><a href="?{% querystring request.GET page=page_obj.previous_page_number %}">‹ Anterior</a></li>
+      {% endif %}
+      <li>página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</li>
+      {% if page_obj.has_next %}
+        <li><a href="?{% querystring request.GET page=page_obj.next_page_number %}">Próxima ›</a></li>
+        <li><a href="?{% querystring request.GET page=page_obj.paginator.num_pages %}">Último »</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+{% endblock %}

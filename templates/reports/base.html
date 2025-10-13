@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>{% block title %}GLPI Reports{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  {% csrf_token %}
+</head>
+<body>
+  <main class="container">
+    <nav>
+      <ul>
+        <li><strong>GLPI Reports</strong></li>
+        <a href="#" data-theme-switcher="toggle" title="Toggle Theme" style="color: var(--pico-contrast); text-decoration: none;">☀️</a>
+      </ul>
+      <ul>
+        {% if request.user.is_authenticated %}
+        <li><a href="{% url 'home' %}">Início</a></li>
+        <li>
+          <details class="dropdown">
+            <summary>
+              Relatórios
+            </summary>
+            <ul dir="rtl">
+              <li><a href="{% url 'chamados_por_area' %}">Chamados por área</a></li>
+            </ul>
+          </details>
+        </li>
+        <li>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="outline" style="margin-bottom:0;" type="submit" class="secondary">Sair</button>
+          </form>
+        </li>
+        
+        {% endif %}
+      </ul>
+    </nav>
+
+    {% block content %}{% endblock %}
+  </main>
+  <script>
+    // https://benhoskins.dev/pico-css-theme-toggle/
+    const themeSwitcher = {
+      // Config
+      _scheme: "auto",
+      buttonsTarget: "a[data-theme-switcher]",
+      buttonAttribute: "data-theme-switcher",
+      rootAttribute: "data-theme",
+      localStorageKey: "picoPreferredColorScheme",
+
+      // Init
+      init() {
+        this.scheme = this.schemeFromLocalStorage;
+        this.initSwitchers();
+      },
+
+      // Get color scheme from local storage
+      get schemeFromLocalStorage() {
+        return window.localStorage?.getItem(this.localStorageKey) ?? this._scheme;
+      },
+
+      // Preferred color scheme
+      get preferredColorScheme() {
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      },
+
+      // Init switchers
+      initSwitchers() {
+        const buttons = document.querySelectorAll(this.buttonsTarget);
+        buttons.forEach((button) => {
+          button.addEventListener(
+            "click",
+            (event) => {
+              event.preventDefault();
+              // Set scheme
+              this.scheme = button.getAttribute(this.buttonAttribute);
+            },
+            false
+          );
+        });
+      },
+
+      // Set scheme
+      set scheme(scheme) {
+        if (scheme == "auto") {
+          this._scheme = this.preferredColorScheme;
+        }
+        else if (scheme == "toggle") {
+          this._scheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        }
+        else if (scheme == "dark" || scheme == "light") {
+          this._scheme = scheme;
+        }
+        this.applyScheme();
+        this.schemeToLocalStorage();
+      },
+
+      // Get scheme
+      get scheme() {
+        return this._scheme;
+      },
+
+      // Apply scheme
+      applyScheme() {
+        document.querySelector("html")?.setAttribute(this.rootAttribute, this.scheme);
+      },
+
+      // Store scheme to local storage
+      schemeToLocalStorage() {
+        window.localStorage?.setItem(this.localStorageKey, this.scheme);
+      },
+    };
+
+    // Init
+    themeSwitcher.init();
+  </script>
+</body>
+</html>

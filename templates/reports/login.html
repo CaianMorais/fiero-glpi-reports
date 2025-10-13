@@ -1,0 +1,32 @@
+{% extends "reports/base.html" %}
+{% block title %}Entrar — GLPI Reports{% endblock %}
+
+{% block content %}
+  <section style="max-width: 420px; margin: 4rem auto;">
+    <h2>Entrar</h2>
+    {% if form.errors or form.non_field_errors %}
+      <article class="contrast">
+        <strong>Não foi possível autenticar.</strong>
+        <p>Confira usuário e senha e tente novamente.</p>
+      </article>
+    {% endif %}
+
+    <form method="post" action="{% url 'login' %}">
+    {% csrf_token %}
+    {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+    {% endif %}
+
+      <label>Usuário
+        {{ form.username }}
+      </label>
+
+      <label>Senha
+        {{ form.password }}
+      </label>
+
+      <button type="submit">Entrar</button>
+    </form>
+
+  </section>
+{% endblock %}
