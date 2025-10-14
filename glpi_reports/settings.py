@@ -76,10 +76,16 @@ WSGI_APPLICATION = 'glpi_reports.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+SQLITE_PATH = os.getenv("SQLITE_PATH")
+if SQLITE_PATH:
+    sqlite_name = SQLITE_PATH
+else:
+    sqlite_name = str(BASE_DIR / "db.sqlite3")
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': sqlite_name,
     },
     'glpi': {
         'ENGINE': 'django.db.backends.mysql',
