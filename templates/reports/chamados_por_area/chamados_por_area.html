@@ -1,8 +1,8 @@
 {% extends "reports/base.html" %}
-{% block title %}Tickets detalhados — GLPI Reports{% endblock %}
+{% block title %}Chamados por área — GLPI Reports{% endblock %}
 {% block content %}
   <h3>Chamados por área</h3>
-  {% include "reports/_filter_form.html" %}
+  {% include "reports/chamados_por_area/_cpa_filter_form.html" %}
   <p><strong>Total filtrado:</strong> {{ total }}</p>
   {% if page_obj.object_list %}
   <p>

@@ -1,0 +1,67 @@
+{% extends "reports/base.html" %}
+{% block title %}Média satisfação — GLPI Reports{% endblock %}
+{% block content %}
+  <h3>Média da pesquisa de satisfação</h3>
+  {% include "reports/media_satisfacao/_ms_filter_form.html" %}
+  {% if page_obj.object_list %}
+  {% if total > 0 %}
+    <p>
+      O departamento <strong>{{ area_label }}</strong> obteve
+      <strong>{{ total }}</strong> respostas de pesquisa de satisfação entre
+      <strong>{{ inicio|date:"d/m/Y" }}</strong> e
+      <strong>{{ fim|date:"d/m/Y" }}</strong> e obteve uma média de
+      <strong>{{ media|stringformat:".2f" }}</strong> na avaliação de pesquisa de satisfação.
+    </p>
+    <small>(Obs.: o total considera apenas chamados com pesquisa respondida.)</small>
+  {% else %}
+    <p>
+      Nenhum chamado com pesquisa respondida para <strong>{{ area_label }}</strong> entre
+      <strong>{{ inicio|date:"d/m/Y" }}</strong> e
+      <strong>{{ fim|date:"d/m/Y" }}</strong>.
+    </p>
+  {% endif %}
+  <p>
+    <a class="contrast" href="{% url 'media_satisfacao_csv' %}{% querystring request.GET %}">
+      Exportar CSV
+    </a>
+  </p>
+  {% endif %}
+  <table role="grid">
+    <thead>
+      <tr>
+        <th>Chamado</th>
+        <th>Área Responsável</th>
+        <th>Avaliação da pesquisa (máx.: 5)</th>
+        <th>Comentário</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in page_obj.object_list %}
+      <tr>
+        <td><a href="http://glpi.fiero.org.br/front/ticket.form.php?id={{ row.ticket_id }}" target="_blank">{{ row.ticket_id }}</a></td>
+        <td>{{ row.categoria_nivel2 }}</td>
+        <td>{{ row.nota_satisfacao }}</td>
+        <td style="font-size:14px;">{{ row.comentario_satisfacao|default:"—"|truncatechars:50 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7">Nenhum resultado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav>
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li><a href="?{% querystring request.GET page=1 %}">« Primeiro</a></li>
+        <li><a href="?{% querystring request.GET page=page_obj.previous_page_number %}">‹ Anterior</a></li>
+      {% endif %}
+      <li>página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</li>
+      {% if page_obj.has_next %}
+        <li><a href="?{% querystring request.GET page=page_obj.next_page_number %}">Próxima ›</a></li>
+        <li><a href="?{% querystring request.GET page=page_obj.paginator.num_pages %}">Último »</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+{% endblock %}
