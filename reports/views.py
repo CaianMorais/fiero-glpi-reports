@@ -294,7 +294,6 @@ def media_satisfacao(request):
 def media_satisfacao_csv(request):
     form = MediaSatisfacao(request.GET or None)
     rows = []
-    page_obj = None
     total = 0
     media = 0.0
     area_label = ""
@@ -376,13 +375,26 @@ def media_satisfacao_csv(request):
     writer = csv.writer(response, delimiter=';', lineterminator='\n')
     writer.writerow(["Chamado", "Área Responsável", "Avaliação da pesquisa", "Comentário"])
     for r in rows:
+        if total:
+            notas = [
+                float(r["nota_satisfacao"])
+                for r in rows
+                if r.get("nota_satisfacao") is not None
+            ]
+            total_chamados = len(rows)
+            media = round(sum(notas) / len(notas), 2) if notas else 0.0
         writer.writerow([
             r.get("ticket_id", 0),
             r.get("categoria_nivel2", ""),
             r.get("nota_satisfacao", 0),
             r.get("comentario_satisfacao", ""),
         ])
+    writer.writerow([
+        f"Total chamados: {total_chamados}",
+        f"{area_label}",
+        f"Média: {media}",
+        ""])
         
     return response
 
-##############3 MÉDIA SATISFAÇÃO FIM ###################
+############## MÉDIA SATISFAÇÃO FIM ###################
