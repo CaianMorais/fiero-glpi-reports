@@ -62,3 +62,29 @@ class MediaSatisfacao(forms.Form):
         choices=AREA_CHOICES,
         required=True
     )
+
+class ChamadosIntervalo(forms.Form):
+    inicio = forms.DateField(
+        label='Início',
+        initial=date.today().replace(day=1),
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        required=True,
+    )
+
+    fim = forms.DateField(
+        label='Fim',
+        initial=date.today(),
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        required=True,
+    )
+
+    area = forms.ChoiceField(
+        label="Área",
+        choices=AREA_CHOICES,
+        required=True
+    )
+
+    intervalo = forms.IntegerField(
+        label="Intervalo (em horas)",
+        required=True,
+    )

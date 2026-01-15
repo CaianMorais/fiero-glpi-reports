@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.core.paginator import Paginator
 from django.db import connections
-from .forms import ChamadosPorArea,MediaSatisfacao
+from .forms import ChamadosPorArea, MediaSatisfacao, ChamadosIntervalo
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseBadRequest
 import csv
@@ -78,6 +78,13 @@ def chamados_por_area(request):
             WHERE t.is_deleted = 0
             AND t.date BETWEEN %s AND %s
             AND t.status IN (%s)
+            AND NOT EXISTS (
+                SELECT 1
+                FROM glpi_tickets_users tu233
+                WHERE tu233.tickets_id = t.id
+                    AND tu233.users_id = 233
+                    AND tu233.type IN (1,2,3)
+            )
             GROUP BY g.id, categoria_nivel2
             ORDER BY g.name ASC, qtde_chamados DESC;
         """
@@ -88,7 +95,7 @@ def chamados_por_area(request):
             rows = _fetch_all_dict(cur)
             total = len(rows)
 
-    paginator = Paginator(rows, 100)  # 50 por página
+    paginator = Paginator(rows, 100)  # 100 por página
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -157,6 +164,13 @@ def chamados_por_area_csv(request):
         WHERE t.is_deleted = 0
         AND t.date BETWEEN %s AND %s
         AND t.status IN (%s)
+        AND NOT EXISTS (
+            SELECT 1
+            FROM glpi_tickets_users tu233
+            WHERE tu233.tickets_id = t.id
+                AND tu233.users_id = 233
+                AND tu233.type IN (1,2,3)
+        )
         GROUP BY g.id, categoria_nivel2
         ORDER BY g.name ASC, qtde_chamados DESC;
     """
@@ -398,3 +412,171 @@ def media_satisfacao_csv(request):
     return response
 
 ############## MÉDIA SATISFAÇÃO FIM ###################
+
+############## CHAMADOS ATENDIDOS POR INTERVALO INICIO ##############
+
+@login_required
+def chamados_intervalo(request):
+    form = ChamadosIntervalo(request.GET or None)
+    rows = []
+    page_obj = None
+    total = 0
+    inicio = fim = None
+
+    if form.is_valid():
+        inicio = form.cleaned_data['inicio']
+        fim = form.cleaned_data['fim']
+        area = form.cleaned_data['area']
+        intervalo = form.cleaned_data['intervalo']
+
+        sql = """
+        WITH RECURSIVE cat_up AS (
+        SELECT
+            c.id AS cat_id,
+            c.itilcategories_id AS parent_id,
+            c.level,
+            c.completename,
+            CASE WHEN c.level = 2 THEN c.id END AS l2_id,
+            CASE WHEN c.level = 2 THEN c.completename END AS l2_name
+        FROM glpi_itilcategories c
+
+        UNION ALL
+
+        SELECT
+            cu.cat_id,
+            p.itilcategories_id AS parent_id,
+            p.level,
+            p.completename,
+            CASE WHEN p.level = 2 THEN p.id ELSE cu.l2_id END AS l2_id,
+            CASE WHEN p.level = 2 THEN p.completename ELSE cu.l2_name END AS l2_name
+        FROM glpi_itilcategories p
+        JOIN cat_up cu ON p.id = cu.parent_id
+        WHERE cu.l2_id IS NULL
+        ),
+        cat_map AS (
+        SELECT cat_id, MAX(l2_id) AS l2_id, MAX(l2_name) AS l2_name
+        FROM cat_up
+        GROUP BY cat_id
+        )
+
+        SELECT
+        cm.l2_name AS area_responsavel,
+        COUNT(DISTINCT t.id) AS chamados_intervalo
+        FROM glpi_tickets t
+        JOIN cat_map cm
+        ON cm.cat_id = t.itilcategories_id
+        WHERE t.is_deleted = 0
+        AND t.date_creation >= %s AND t.date_creation <= %s
+        AND t.closedate IS NOT NULL
+        AND cm.l2_name = %s
+        AND TIMESTAMPDIFF(HOUR, t.date_creation, t.closedate) < %s
+        AND t.closedate >= t.date_creation
+        AND NOT EXISTS (
+            SELECT 1
+            FROM glpi_tickets_users tu233
+            WHERE tu233.tickets_id = t.id
+                AND tu233.users_id = 233
+                AND tu233.type IN (1,2,3)  -- 1=requisitante, 2=atribuído, 3=observador
+        );
+
+        """
+        params = [inicio, fim, area, intervalo]
+
+        with connections['glpi'].cursor() as cur:
+            cur.execute(sql, params)
+            rows = _fetch_all_dict(cur)
+            total = len(rows)
+
+    paginator = Paginator(rows, 100)  # 100 por página
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(
+        request,
+        "reports/chamados_intervalo/chamados_intervalo.html",
+        {"form": form, "page_obj": page_obj, "total": total},
+    )
+
+@login_required
+def chamados_intervalo_csv(request):
+    form = ChamadosIntervalo(request.GET or None)
+    rows = []
+    inicio = fim = None
+
+    if form.is_valid():
+        inicio = form.cleaned_data['inicio']
+        fim = form.cleaned_data['fim']
+        area = form.cleaned_data['area']
+        intervalo = form.cleaned_data['intervalo']
+
+        sql = """
+        WITH RECURSIVE cat_up AS (
+        SELECT
+            c.id AS cat_id,
+            c.itilcategories_id AS parent_id,
+            c.level,
+            c.completename,
+            CASE WHEN c.level = 2 THEN c.id END AS l2_id,
+            CASE WHEN c.level = 2 THEN c.completename END AS l2_name
+        FROM glpi_itilcategories c
+
+        UNION ALL
+
+        SELECT
+            cu.cat_id,
+            p.itilcategories_id AS parent_id,
+            p.level,
+            p.completename,
+            CASE WHEN p.level = 2 THEN p.id ELSE cu.l2_id END AS l2_id,
+            CASE WHEN p.level = 2 THEN p.completename ELSE cu.l2_name END AS l2_name
+        FROM glpi_itilcategories p
+        JOIN cat_up cu ON p.id = cu.parent_id
+        WHERE cu.l2_id IS NULL
+        ),
+        cat_map AS (
+        SELECT cat_id, MAX(l2_id) AS l2_id, MAX(l2_name) AS l2_name
+        FROM cat_up
+        GROUP BY cat_id
+        )
+
+        SELECT
+        cm.l2_name AS area_responsavel,
+        COUNT(DISTINCT t.id) AS chamados_intervalo
+        FROM glpi_tickets t
+        JOIN cat_map cm
+        ON cm.cat_id = t.itilcategories_id
+        WHERE t.is_deleted = 0
+        AND t.date_creation >= %s AND t.date_creation <= %s
+        AND t.closedate IS NOT NULL
+        AND cm.l2_name = %s
+        AND TIMESTAMPDIFF(HOUR, t.date_creation, t.closedate) < %s
+        AND t.closedate >= t.date_creation
+        AND NOT EXISTS (
+            SELECT 1
+            FROM glpi_tickets_users tu233
+            WHERE tu233.tickets_id = t.id
+                AND tu233.users_id = 233
+                AND tu233.type IN (1,2,3)  -- 1=requisitante, 2=atribuído, 3=observador
+        );
+
+        """
+        params = [inicio, fim, area, intervalo]
+
+        with connections['glpi'].cursor() as cur:
+            cur.execute(sql, params)
+            rows = _fetch_all_dict(cur)
+
+    filename = f"chamados_atendidos_intervalo{inicio}_{fim}.csv"
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    response.write('\ufeff')
+    writer = csv.writer(response, delimiter=';', lineterminator='\n')
+    writer.writerow(["Área Responsável", "Quantidade de chamados"])
+    for r in rows:
+        writer.writerow([
+            r.get("area_responsavel", ""),
+            r.get("chamados_intervalo", 0),
+        ])
+        
+    return response

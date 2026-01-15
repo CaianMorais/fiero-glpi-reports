@@ -1,12 +1,12 @@
 {% extends "reports/base.html" %}
 {% block title %}Chamados por área — GLPI Reports{% endblock %}
 {% block content %}
-  <h3>Chamados por área</h3>
-  {% include "reports/chamados_por_area/_cpa_filter_form.html" %}
-  <p><strong>Total de registros:</strong> {{ total }}</p>
+  <h3>Chamados atendidos em intervalo</h3>
+  {% include "reports/chamados_intervalo/_ci_filter_form.html" %}
+  <p><strong>Total filtrado:</strong> {{ total }}</p>
   {% if page_obj.object_list %}
   <p>
-    <a class="contrast" href="{% url 'chamados_por_area_csv' %}{% querystring request.GET %}">
+    <a class="contrast" href="{% url 'chamados_intervalo_csv' %}{% querystring request.GET %}">
       Exportar CSV
     </a>
   </p>
@@ -14,7 +14,6 @@
   <table role="grid">
     <thead>
       <tr>
-        <th>Grupo Requisitante</th>
         <th>Área do Chamado</th>
         <th>Quantidade de chamados</th>
       </tr>
@@ -22,9 +21,8 @@
     <tbody>
       {% for row in page_obj.object_list %}
       <tr>
-        <td>{{ row.grupo_requisitante }}</td>
-        <td>{{ row.categoria_nivel2 }}</td>
-        <td>{{ row.qtde_chamados }}</td>
+        <td>{{ row.area_responsavel }}</td>
+        <td>{{ row.chamados_intervalo }}</td>
       </tr>
       {% empty %}
       <tr><td colspan="7">Nenhum resultado.</td></tr>

@@ -53,13 +53,13 @@
   <nav>
     <ul class="pagination">
       {% if page_obj.has_previous %}
-        <li><a href="?{% querystring request.GET page=1 %}">« Primeiro</a></li>
-        <li><a href="?{% querystring request.GET page=page_obj.previous_page_number %}">‹ Anterior</a></li>
+        <li><a href="{% querystring request.GET page=1 %}">« Primeiro</a></li>
+        <li><a href="{% querystring request.GET page=page_obj.previous_page_number %}">‹ Anterior</a></li>
       {% endif %}
       <li>página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</li>
       {% if page_obj.has_next %}
-        <li><a href="?{% querystring request.GET page=page_obj.next_page_number %}">Próxima ›</a></li>
-        <li><a href="?{% querystring request.GET page=page_obj.paginator.num_pages %}">Último »</a></li>
+        <li><a href="{% querystring request.GET page=page_obj.next_page_number %}">Próxima ›</a></li>
+        <li><a href="{% querystring request.GET page=page_obj.paginator.num_pages %}">Último »</a></li>
       {% endif %}
     </ul>
   </nav>
